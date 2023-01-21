@@ -1,1 +1,0 @@
-Variance is diagonal of covariance matrix

@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from scipy.optimize import fsolve, curve_fit
+import matplotlib.pyplot as plt
 
 # Define constants - Subscript W for water, G for ethylene glycol.
 # Fractions
@@ -9,13 +10,13 @@ x_W = 0.4
 # Densities (kg/m3)
 p_G = 1113
 p_W = 998
-p = p_G * x_G + p_W * x_W
+density = p_G * x_G + p_W * x_W
 # Viscosity (Pa.s)
 u_G = 0.0161
 u_W = 0.0010
-u = u_G * x_G + u_W * x_W
+viscosity = u_G * x_G + u_W * x_W
 # Roughness (m)
-e = 5.01e-5
+roughness = 5.01e-5
 # Pipe lengths (m)
 L = np.array([260, 450, 450, 450, 450, 400, 400, 400, 400, 600])
 # Pipe diameter (m)
@@ -25,21 +26,12 @@ F_in = 78 * 4 / 1000 / 60
 F_out = 78 / 1000 / 60
 
 
-def FrictionFactor(q):
-    # Calculate Reynolds numbers
-    Re = 4 * p * q / np.pi / u / D
-    # Churchill Equation Parameters
-    A = (2.457 * np.log(1 / ((7 / Re) ** 0.9 + 0.27 * (e / D)))) ** 16
-    B = (37530 / Re) ** 16
-    # Use Churchill Equation to calculate f
-    return 2 * ((8 / Re) ** 12 + 1 / (A + B) ** (3 / 2)) ** (1 / 12)
-
-
 def Pressure(q, L):
-    # Get friction factor from equation
-    f = FrictionFactor(q)
-    # Calculate pressure drop
-    return 2 * f * p * (4 * q / np.pi / D ** 2) ** 2 * L / D
+    Re = 4 * density * q / np.pi / viscosity / D
+    A = (2.457 * np.log(1 / ((7 / Re) ** 0.9 + 0.27 * (roughness / D)))) ** 16
+    B = (37530 / Re) ** 16
+    f = 2 * ((8/Re)**12 + 1/(A + B)**(3/2))**(1/12)
+    return 2 * f * density * (4 * q / np.pi / D ** 2) ** 2 * L / D
 
 
 def FlowRate(q, D):
@@ -66,23 +58,26 @@ def FlowRate(q, D):
     P46 = P[7]
     P57 = P[8]
     P67 = P[9]
-    # Calculate energy balance for each loop
+
     F[7] = P12 + P24 - P14
     F[8] = P23 + P35 - P24 - P45
     F[9] = P45 + P57 - P46 - P67
+
     return F
 
 
-# Define initial guesses
+#initial guesses
 q0 = [0.003, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002]
-# Solve system of equations
-q = fsolve(FlowRate, q0, args=(D), xtol=1e-8)
-# Calculate pressure drop
-DP = Pressure(q, L) / 1000  # pressure drop (kPa)
 
-# Output results
-df = pd.DataFrame()
-df['Pipe length (m)'] = L
-df['Flow rate (m3/s)'] = q
-df['Pressure drop (kPa)'] = DP
-print(df)
+q = fsolve(FlowRate, q0, args=(D), xtol= 1e-8)
+
+print(q)
+
+
+
+
+
+
+
+
+
