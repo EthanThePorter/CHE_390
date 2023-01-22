@@ -86,3 +86,5 @@ df['Pipe length (m)'] = L
 df['Flow rate (m3/s)'] = q
 df['Pressure drop (kPa)'] = DP
 print(df)
+
+df.to_excel('T1A_data.xlsx')

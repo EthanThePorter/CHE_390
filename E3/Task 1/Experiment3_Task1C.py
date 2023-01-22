@@ -95,9 +95,6 @@ T_actual = np.asarray(Td, dtype=float)
 x_actual = np.asarray(xd, dtype=float)
 y_actual = np.asarray(yd, dtype=float)
 
-# Output R-squared for plots
-
-
 # Plot
 plt.plot(x_array, T_list, label='Predicted Bubble Point Curve')
 plt.plot(y_list, T_list, label='Predicted Dew Point Curve')
