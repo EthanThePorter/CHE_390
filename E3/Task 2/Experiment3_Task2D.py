@@ -17,9 +17,8 @@ u = u_G * x_G + u_W * x_W
 # Roughness (m)
 e = 5.01e-5
 # Pipe lengths (m)
-L = np.array([260, 450, 450, 450, 450, 400, 400, 400, 400, 600])
+L = np.array([260, 450, 600, 450, 400, 400, 450, 400, 400, 450])
 # Flow rates (L/min) to (m3/s)
-F_in = 78 * 4 / 1000 / 60
 F_out = 78 / 1000 / 60
 
 
@@ -88,7 +87,7 @@ for D in D_array:
     # Define constants for pump efficiency calculations
     # Pump efficiencies
     pump_efficiency = 0.6
-    pump_motor_efficiency = 0.4
+    pump_motor_efficiency = 0.8
     # Calculate total power requirement (W) to (kW)
     W = np.sum(q * Pressure(q, L, D)) / pump_efficiency / pump_motor_efficiency / 1000
 

@@ -69,36 +69,48 @@ def get_VLE_data(parameters, P_total, G, x):
     return P_total - gamma1 * x1 * P1 / y1, P_total - gamma2 * x2 * P2 / y2
 
 
-# Define total system pressure (kPa)
-P_total = 32.86
-# Define points to plot T-xy and xy data
-x_array = np.arange(0.001, 0.999, 0.001)
-# Get parameters for Wilson equation
-G = getWilsonParameters()
-# Initialize list to save data to
-T_list = []
-y_list = []
-# Get VLE data
-for x in x_array:
-    T, y = fsolve(get_VLE_data, x0=(344, x), args=(P_total, G, x))
-    T_list.append(T)
-    y_list.append(y)
-
 # Get VLE data from literature
 data = pd.read_excel('./data/VLEData_EthanolWater2.xlsx', 'Sheet1')
 # Parse data
 Td = data.iloc[1:21, 0]
 xd = data.iloc[1:21, 1]
 yd = data.iloc[1:21, 2]
-# Convert data to arrays
-T_actual = np.asarray(Td, dtype=float)
-x_actual = np.asarray(xd, dtype=float)
-y_actual = np.asarray(yd, dtype=float)
+# Convert data to arrays - Omit last data point because it throws model off
+T_actual = np.asarray(Td, dtype=float)[:-1]
+x_actual = np.asarray(xd, dtype=float)[:-1]
+y_actual = np.asarray(yd, dtype=float)[:-1]
+
+
+# Define total system pressure (kPa)
+P_total = 32.86
+# Get parameters for Wilson equation
+G = getWilsonParameters()
+# Initialize list to save data to
+T_list = []
+y_list = []
+# Get VLE data
+for x in x_actual:
+    T, y = fsolve(get_VLE_data, x0=(344, x), args=(P_total, G, x))
+    T_list.append(T)
+    y_list.append(y)
+
+# Convert lists in array
+T_list = np.array(T_list)
+y_list = np.array(y_list)
+
+# Calculate R2
+SSE = np.sum((T_list - T_actual) ** 2)
+T_mean = np.mean(T_actual)
+SST = np.sum((T_actual - T_mean) ** 2)
+R2 = 1 - SSE / SST
+print('R-squared: ', R2)
+print('SSE: ', SSE)
+
 
 # Initialize plots
 fig, axs = plt.subplots(1, 2)
 # Plot TXY
-axs[0].plot(x_array, T_list, label='Predicted Bubble Point Curve')
+axs[0].plot(x_actual, T_list, label='Predicted Bubble Point Curve')
 axs[0].plot(y_list, T_list, label='Predicted Dew Point Curve')
 axs[0].plot(x_actual, T_actual, label='Actual Bubble Point Curve')
 axs[0].plot(y_actual, T_actual, label='Actual Dew Point Curve')
@@ -110,7 +122,7 @@ axs[0].legend()
 axs[0].grid()
 # Plot XY
 axs[1].plot([0, 1], [0, 1], '--', label='Y=X')
-axs[1].plot(x_array, y_list, label='Eqm. Data')
+axs[1].plot(x_actual, y_list, label='Eqm. Data')
 axs[1].set_title('XY Diagram at 32.86kPa')
 axs[1].set_xlabel('X')
 axs[1].set_ylabel('Y')
