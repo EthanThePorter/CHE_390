@@ -17,7 +17,7 @@ u = u_G * x_G + u_W * x_W
 # Roughness (m)
 e = 5.01e-5
 # Pipe lengths (m)
-L = np.array([260, 450, 450, 450, 450, 400, 400, 400, 400, 600])
+L = np.array([260, 450, 600, 450, 400, 400, 450, 400, 400, 450])
 # Pipe diameter (m)
 D = 1 * 2.54 / 100
 # Flow rates (L/min) to (m3/s)

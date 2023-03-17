@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from scipy.optimize import fsolve, curve_fit
+from scipy.optimize import fsolve
 
 # Define constants - Subscript W for water, G for ethylene glycol.
 # Fractions
@@ -17,11 +17,10 @@ u = u_G * x_G + u_W * x_W
 # Roughness (m)
 e = 5.01e-5
 # Pipe lengths (m)
-L = np.array([260, 450, 450, 450, 450, 400, 400, 400, 400, 600])
+L = np.array([260, 450, 600, 450, 400, 400, 450, 400, 400, 450])
 # Pipe diameter (m)
 D = 1 * 2.54 / 100
 # Flow rates (L/min) to (m3/s)
-F_in = 78 * 4 / 1000 / 60
 F_out = 78 / 1000 / 60
 
 
@@ -56,7 +55,6 @@ def FlowRate(q, D):
 
     # Get pressure drops
     P = Pressure(q, L)
-    # Parse
     P12 = P[1]
     P14 = P[2]
     P23 = P[3]
@@ -87,4 +85,4 @@ df['Flow rate (m3/s)'] = q
 df['Pressure drop (kPa)'] = DP
 print(df)
 
-df.to_excel('T1A_data.xlsx')
+df.to_excel('data.xlsx')
