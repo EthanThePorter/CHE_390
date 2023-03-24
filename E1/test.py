@@ -1,15 +1,14 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
-data = pd.read_excel('CHE 390 E1.xlsx', sheet_name='G16 Specimen Data')
 
-print(data)
+x = [1, 2, 3, 4]
+y = [1, 2, 3, 4]
 
-width = data['Width (mm)']
-thickness = data['Thickness (mm)']
-
-x = width * thickness
-
-print(x)
-
-print([1, 2, 3, 4][0:1])
+plt.plot(x, y, label='Run 1')
+plt.ylabel('ln(C*/C)')
+plt.xlabel('t (s)')
+plt.grid()
+plt.legend()
+plt.show()

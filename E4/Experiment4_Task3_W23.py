@@ -21,7 +21,15 @@ e = np.array([
 
 r, c = np.shape(v)
 
-Gf = np.array([-50.84, -228.60, 0, -137.28, -394.38]) * 1000  # Free energy of formation in J/mol.
+Gf = np.array([-50.84, -228.60, 0, -137.28, -394.38])   # Free energy of formation in J/mol.
+Hf = np.array([-74.85, -241.80, 0, -110.54, -393.51])  # Enthalpy of formation in kJ/mol.
+
+# Heat capacity in J/mol K
+Cp = np.array([[34.942, -3.9957e-2, 1.9184e-4, -1.5303e-7, 3.9321e-11],  # CH4
+               [33.933, -8.4186e-3, 2.9906e-5, -1.7825e-8, 3.6934e-12],  # H2O
+               [25.399, 2.0178e-2, -3.8549e-5, 3.1880e-8, -8.7585e-12],  # H2
+               [29.556, -6.5807e-3, 2.0130e-5, -1.2227e-8, 2.2617e-12],  # CO
+               [27.437, 4.2315e-2, -1.9555e-5, 3.9968e-9, -2.9872e-13]])  # CO2
 
 R = 8.314
 P = 1.20  # Reaction pressure, atm
@@ -35,10 +43,11 @@ nko = 0  # Inert gas in moles
 
 def GRT(n, T):
     y = n / np.sum(n)
-    print()
-    print(n * Gf / (R * T))
-    print(n * (np.log(P) + np.log(y)))
-    return np.sum(n * Gf / (R * T) + n * (np.log(P) + np.log(y)))
+    u = Gf * 1000 / To \
+        - (Cp[:, 0] * np.log(T / To) + Cp[:, 1] / 2 * (T - To) + Cp[:, 2] / 6 * (T**2 - To**2) + Cp[:, 3] / 12 * (T**3 - To**3) + Cp[:, 4] / 20 * (T**4 - To**4)) \
+        + (Hf * 1000 - Cp[:, 0] * To - Cp[:, 1] / 2 * To**2 - Cp[:, 2] / 3 * To**3 - Cp[:, 3] / 4 * To**4 - Cp[:, 4] / 5 * To**5) * (1/T - 1/To) \
+        * T
+    return np.sum(n * u / (R * T)) + np.sum(n * (np.log(P) + np.log(y)))
 
 
 def constraints(n, T):
@@ -76,14 +85,18 @@ for i in range(0, nT, 1):
     ub = [nCH4f, nH2Of, 2 * nH2Of, nCH4f, nCH4f]
     bounds = [(lb[i], ub[i]) for i in range(len(lb))]
 
-    n0 = [0.1, 0.02, 0.02, 0.02, 0.02]  # Solution is very sensitive to initial guess!!!!!!!!!
+    n0 = [0.15, 0.6, 0.2, 0.001, 0.05]  # Solution is very sensitive to initial guess!!!!!!!!!
     xsol = fmin_slsqp(GRT, n0, f_eqcons=constraints, bounds=bounds, acc=1e-6, args=(T,))
+    print()
     print(xsol)
+    print(GRT(xsol, T))
+    print(constraints(xsol, T))
 
     xo = nf / (sum(nf) + nko)
     xc = xsol
     x = (xo + xc) / (1 + sum(xc))
     mT = (sum(nf) + nko) * (1 + sum(xc))  # Equation 4.6
+
 
     xCH4[i] = x[0]
     xH2O[i] = x[1]
@@ -96,6 +109,8 @@ for i in range(0, nT, 1):
     Yield_CO2[i] = x[4] * mT / (nf[0] - x[0] * mT)
 
     Results[i, 0:] = [Top[i], xCH4[i], xH2O[i], xH2[i], xCO[i], xCO2[i], Conv_CH4[i], Yield_H2[i], Yield_CO2[i]]
+
+
 
 # Plotting
 Results = np.round(Results, 3)

@@ -47,9 +47,9 @@ class BioreactorOptimization:
         self.h = (self.V/1000) / self.A
 
         # kLa correlation values
-        self.a = 0.525
-        self.b = 0.746
-        self.c = 0.00005
+        self.a = 0.49
+        self.b = 1.32
+        self.c = 0.1888
 
 
     def CompressorPower(self, Q):
@@ -127,7 +127,7 @@ class BioreactorOptimization:
             # Update Q to be the superficial gas velocity
             Q_list = Q_list / 1000 / 60 / self.A
             Q_min = Q_min / 1000 / 60 / self.A
-            print(f'Minimum total power required is: {round(minimum_total_power, 1)}W at {round(Q_min, 6)}m/s')
+            print(f'\nMinimum total power required is: {round(minimum_total_power, 1)}W at {round(Q_min, 6)}m/s')
             # Plot
             plt.plot(Q_list, P_compressor_array, label='Compressor')
             plt.plot(Q_list, P_agitator_array, label='Agitator')
@@ -138,7 +138,7 @@ class BioreactorOptimization:
             plt.grid()
             plt.show()
         else:
-            print(f'Minimum total power required is: {round(minimum_total_power, 1)}W at {round(Q_min, 3)}SLPM')
+            print(f'\nMinimum total power required is: {round(minimum_total_power, 1)}W at {round(Q_min, 3)}SLPM')
             # Plot
             plt.plot(Q_list, P_compressor_array, label='Compressor')
             plt.plot(Q_list, P_agitator_array, label='Agitator')
@@ -158,8 +158,59 @@ class BioreactorOptimization:
         """
         P_g = self.AgitatorPower(Q, RPM)
         U = Q / 1000 / 60 / self.A
-        print(P_g, U)
-        return self.c * (P_g / self.V) ** self.a * U ** self.b
+        return self.c * (P_g / (self.V / 1000)) ** self.a * U ** self.b
+
+    def kLaOptimization(
+            self,
+            RPM,
+            minimum_kLa,
+            flowrate_range,
+            plot_results=True,
+            output_results=True,
+    ):
+        Q_list = np.linspace(flowrate_range[0], flowrate_range[1], 1000)
+        kLa_list = self.kLa(Q_list, RPM)
+        P_agit = self.AgitatorPower(Q_list, RPM)
+        # Increase compressor power by a factor of 2x to account for pressure losses throughout system
+        P_comp = self.CompressorPower(Q_list) * 2
+        P_tot = P_agit + P_comp
+
+        # Get minimum Q required for the desired kLa
+        kLa_min_index = 0
+        for i in range(len(kLa_list)):
+            if kLa_list[i] > minimum_kLa:
+                kLa_min_index = i
+                break
+
+        # Get Q at minimum power
+        P_min_index = list(P_tot).index(np.min(P_tot))
+
+        if output_results:
+            print(f'\nAgitation speed: {RPM} RPM')
+            print(f'Minimum possible power is {round(P_tot[P_min_index], 3)}W')
+            print(f'Minimum power to achieve desired kLa is {round(P_tot[kLa_min_index], 3)}W ({round(P_tot[kLa_min_index] / P_tot[P_min_index], 3)} of absolute minimum)')
+            print(f'Flowrate at Minimum possible power is: {round(Q_list[P_min_index], 3)} SLPM')
+            print(f'Flowrate at Minimum power is: {round(Q_list[kLa_min_index], 3)} SLPM')
+            print(f'Superficial gas velocity at minimum power is: {round(Q_list[P_min_index] / 1000 / 60 / self.A, 8)}')
+
+        if plot_results:
+            fig, axs = plt.subplots(2, sharex=True)
+            axs[0].plot(Q_list, P_comp, label='Compressor Power')
+            axs[0].plot(Q_list, P_agit, label='Agit Power')
+            axs[0].plot(Q_list, P_tot, label='Total Power')
+            axs[0].axvline(Q_list[P_min_index], color='red', label='Minimum Power')
+            axs[0].set_ylabel('Power Consumption (W)')
+            axs[0].grid()
+            axs[0].legend()
+            axs[1].plot(Q_list, kLa_list, label='kLa')
+            axs[1].axvline(Q_list[kLa_min_index], color='red', label='Minimum Required kLa')
+            axs[1].set_xlabel('Q (SLPM)')
+            axs[1].set_ylabel('kLa (s-1)')
+            axs[1].grid()
+            axs[1].legend()
+            plt.show()
+
+        return P_tot[kLa_min_index]
 
 
 # Initialize simulation for small scale reactor
@@ -178,13 +229,31 @@ large_bioreactor = BioreactorOptimization(
     impeller_blade_thickness=0.015782779,
 )
 
-print(small_bioreactor.kLa(2, 250))
 
+# Define minimum required kLa (s^-1)
+kLa_min = 0.010424924
 
-# # Find minimum superficial gas velocity to required to get
-# Q_list = np.linspace(0.5, 100000, 1000)
-# kLa_list = large_bioreactor.kLa(Q_list, 31.6801)
-# plt.plot(Q_list / 1000 / 60 / large_bioreactor.A, kLa_list)
-# plt.show()
-#
+# Optimize power for small scale bioreactor
+RPM_list = [150, 250, 350]
+for i in RPM_list:
+    small_bioreactor.kLaOptimization(i, kLa_min, [0.5, 10], output_results=True)
+
+# Optimize power for large reactor
+RPM = np.linspace(15, 30, 1000)
+P = []
+for i in RPM:
+    P.append(large_bioreactor.kLaOptimization(i, kLa_min, [0.5, 2000], plot_results=False, output_results=False))
+# Minimum power consumption
+P_min_index = list(P).index(np.min(P))
+# Output RPM at minimum power
+print(f'Agitation Speed at minimum: {RPM[P_min_index]} RPM')
+print(f'Power at minimum: {np.min(P)} W')
+# Plot
+plt.plot(RPM, P, label='Power Required for Minimum kLa')
+plt.xlabel('Agitation (RPM)')
+plt.ylabel('Power (W)')
+plt.axvline(RPM[P_min_index], color='red', label='Minimum Power')
+plt.grid()
+plt.legend()
+plt.show()
 
