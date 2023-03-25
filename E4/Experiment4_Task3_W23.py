@@ -43,10 +43,10 @@ nko = 0  # Inert gas in moles
 
 def GRT(n, T):
     y = n / np.sum(n)
-    u = Gf * 1000 / To \
+    u = (Gf * 1000 / To \
         - (Cp[:, 0] * np.log(T / To) + Cp[:, 1] / 2 * (T - To) + Cp[:, 2] / 6 * (T**2 - To**2) + Cp[:, 3] / 12 * (T**3 - To**3) + Cp[:, 4] / 20 * (T**4 - To**4)) \
         + (Hf * 1000 - Cp[:, 0] * To - Cp[:, 1] / 2 * To**2 - Cp[:, 2] / 3 * To**3 - Cp[:, 3] / 4 * To**4 - Cp[:, 4] / 5 * To**5) * (1/T - 1/To) \
-        * T
+        ) * T
     return np.sum(n * u / (R * T)) + np.sum(n * (np.log(P) + np.log(y)))
 
 
