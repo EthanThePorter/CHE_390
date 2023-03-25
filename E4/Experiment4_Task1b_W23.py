@@ -102,14 +102,17 @@ for i in range(0, nT, 1):
     n0 = [0.1, 0.02, 0.02]  # Solution is very sensitive to initial guess!!!!!!!!!
     xsol = least_squares(EquiEquations, n0, bounds=(lb, ub), method='trf', ftol=1.0e-6, loss='soft_l1', f_scale=0.5,
                          max_nfev=8000)
-    print(xsol)
 
     beta = xsol.x[0:c]  # solution for the extents of the reactions
-    print(beta)
     xo = nf / (sum(nf) + nko)
     xc = np.dot(beta, v)
     x = (xo + xc) / (1 + sum(xc))
     mT = (sum(nf) + nko) * (1 + sum(xc))  # Equation 4.6
+
+    print(xc)
+    print(beta)
+    print(mT)
+    print()
 
     xCH4[i] = x[0]
     xH2O[i] = x[1]

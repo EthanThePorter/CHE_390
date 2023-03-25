@@ -32,7 +32,7 @@ Cp = np.array([[34.942, -3.9957e-2, 1.9184e-4, -1.5303e-7, 3.9321e-11],  # CH4
                [27.437, 4.2315e-2, -1.9555e-5, 3.9968e-9, -2.9872e-13]])  # CO2
 
 R = 8.314
-P = 1.20  # Reaction pressure, atm
+P = 1.55  # Reaction pressure, atm
 To = 298.15  # Reference temperature in K
 nCH4f = 1  # methane in feed in moles.
 Ratio = 3.5  # ratio of H2O to CH4 in feed
@@ -86,16 +86,18 @@ for i in range(0, nT, 1):
     bounds = [(lb[i], ub[i]) for i in range(len(lb))]
 
     n0 = [0.15, 0.6, 0.2, 0.001, 0.05]  # Solution is very sensitive to initial guess!!!!!!!!!
-    xsol = fmin_slsqp(GRT, n0, f_eqcons=constraints, bounds=bounds, acc=1e-6, args=(T,))
-    print()
-    print(xsol)
-    print(GRT(xsol, T))
-    print(constraints(xsol, T))
+    xsol = fmin_slsqp(GRT, n0, f_eqcons=constraints, bounds=bounds, acc=1e-6, args=(T,), full_output=False, disp=0)
 
+    beta = (xsol - nf)[1] / v[:, 1] / sum(xsol)
     xo = nf / (sum(nf) + nko)
-    xc = xsol
-    x = (xo + xc) / (1 + sum(xc))
+    xc = np.dot(beta, v)
+    x = xsol / sum(xsol)
     mT = (sum(nf) + nko) * (1 + sum(xc))  # Equation 4.6
+
+    print(xc)
+    print(beta)
+    print(mT)
+    print()
 
 
     xCH4[i] = x[0]
@@ -104,9 +106,9 @@ for i in range(0, nT, 1):
     xCO[i] = x[3]
     xCO2[i] = x[4]
 
-    Conv_CH4[i] = (nf[0] - x[0] * mT) / nf[0]  # Methane conversion
-    Yield_H2[i] = x[2] * mT / (nf[0] - x[0] * mT)
-    Yield_CO2[i] = x[4] * mT / (nf[0] - x[0] * mT)
+    Conv_CH4[i] = (nf[0] - xsol[0]) / nf[0]  # Methane conversion
+    Yield_H2[i] = xsol[2] / (nf[0] - xsol[0])
+    Yield_CO2[i] = xsol[4] / (nf[0] - xsol[0])
 
     Results[i, 0:] = [Top[i], xCH4[i], xH2O[i], xH2[i], xCO[i], xCO2[i], Conv_CH4[i], Yield_H2[i], Yield_CO2[i]]
 
@@ -125,15 +127,18 @@ fig, axes = plt.subplots(1, 2)
 ax1 = axes[0]
 ax2 = axes[1]
 
-ax1.plot(Top, Conv_CH4, 'ro-')
+ax1.plot(Top, Conv_CH4, 'ro-', label='Conv. CH4')
 ax1.set_xlabel('Temperature (C))')
 ax1.set_ylabel('CH4 conversion')
 ax1.set_ylim(0, 1)
+ax1.legend()
 ax1_y2 = ax1.twinx()
-ax1_y2.plot(Top, Yield_H2, 'd-', Top, Yield_CO2, '*-')
+ax1_y2.plot(Top, Yield_H2, 'd-', label='Yield H2')
+ax1_y2.plot(Top, Yield_CO2, '*-', label='Yield CO2')
 ax1_y2.set_xlabel('Temperature (C))')
 ax1_y2.set_ylabel('Yield of H2 or CO2')
 ax1_y2.set_ylim(0, 4.5)
+ax1_y2.legend()
 
 ax2.plot(Top, Conv_CH4, 'o-', Top, xCH4, 'd-', Top, xH2O, 's-', Top, xH2, '+-', Top, xCO, 'x-', Top, xCO2, '*-')
 ax2.set_xlabel('Temperature (C))')
