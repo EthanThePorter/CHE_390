@@ -114,6 +114,13 @@ for i in range(0, nT, 1):
     print(mT)
     print()
 
+    print()
+    print(xo)
+    print(xc)
+    print(x)
+    print(mT)
+    print(nko)
+
     xCH4[i] = x[0]
     xH2O[i] = x[1]
     xH2[i] = x[2]
